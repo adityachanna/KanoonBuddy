@@ -179,38 +179,46 @@ def grade_documents(state):
     question = state["question"]
     documents = state["documents"]
     filtered_docs = []
-    web_search_needed = "No"
+    web_search_needed = "No"  
     
-    if documents and len(documents) > 0:
-        for d in documents:
-            if not d.page_content or len(d.page_content.strip()) < 10:
-                print("---EMPTY DOCUMENT FOUND---")
-                web_search_needed = "Yes"
-                continue
-                
-            try:
-                score = doc_grader.invoke(
-                    {"question": question, "document": d.page_content}
-                )
-                grade = score.binary_score
-                if grade.lower() == "yes":
-                    print("---GRADE: DOCUMENT RELEVANT---")
-                    filtered_docs.append(d)
-                else:
-                    print("---GRADE: DOCUMENT NOT RELEVANT---")
-                    web_search_needed = "Yes"
-            except Exception as e:
-                print(f"---ERROR GRADING DOCUMENT: {str(e)}---")
-                web_search_needed = "Yes"
-    else:
+    if not documents or len(documents) == 0:
         print("---NO DOCUMENTS RETRIEVED---")
         web_search_needed = "Yes"
-        
+        return {
+            "documents": filtered_docs, 
+            "question": question, 
+            "web_search_needed": web_search_needed,
+            "intermediate_steps": state.get("intermediate_steps", []) + ["No documents retrieved, web search needed"]
+        }
+    found_relevant = False
+    
+    for d in documents:
+        if not d.page_content or len(d.page_content.strip()) < 10:
+            print("---EMPTY DOCUMENT FOUND---")
+            continue
+            
+        try:
+            score = doc_grader.invoke(
+                {"question": question, "document": d.page_content}
+            )
+            grade = score.binary_score
+            if grade.lower() == "yes":
+                print("---GRADE: DOCUMENT RELEVANT---")
+                filtered_docs.append(d)
+                found_relevant = True
+            else:
+                print("---GRADE: DOCUMENT NOT RELEVANT---")
+        except Exception as e:
+            print(f"---ERROR GRADING DOCUMENT: {str(e)}---")
+    if not found_relevant:
+        web_search_needed = "Yes"
+        print("---NO RELEVANT DOCUMENTS FOUND---")
+    
     return {
         "documents": filtered_docs, 
         "question": question, 
         "web_search_needed": web_search_needed,
-        "intermediate_steps": state.get("intermediate_steps", []) + ["Graded documents for relevance"]
+        "intermediate_steps": state.get("intermediate_steps", []) + [f"Graded documents for relevance. Found {len(filtered_docs)} relevant documents."]
     }
 def rewrite_query(state):
     """
@@ -319,12 +327,15 @@ def decide_to_generate(state):
     """
     print("---ASSESS GRADED DOCUMENTS---")
     web_search_needed = state["web_search_needed"]
+    documents = state["documents"]
     
-    if web_search_needed == "Yes":
-        print("---DECISION: SOME or ALL DOCUMENTS ARE NOT RELEVANT TO QUESTION, REWRITE QUERY---")
+    print(f"---DECISION INFO: web_search_needed={web_search_needed}, document_count={len(documents)}---")
+    
+    if web_search_needed.lower() == "yes":
+        print("---DECISION: DOCUMENTS ARE NOT RELEVANT TO QUESTION, REWRITE QUERY---")
         return "rewrite_query"
     else:
-        print("---DECISION: GENERATE RESPONSE---")
+        print("---DECISION: SUFFICIENT RELEVANT DOCUMENTS FOUND, GENERATE RESPONSE---")
         return "generate_answer"
 
 agentic_rag = StateGraph(GraphState)
