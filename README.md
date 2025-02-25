@@ -2,6 +2,18 @@
 
 KanoonBuddy is a legal assistant powered by AI that helps users find relevant legal information, primarily focused on Indian law. It retrieves contextually relevant legal documents, grades their relevance, and answers queries using a combination of retrieval-augmented generation (RAG) and web search.
 
+![Workflow](workflow.png)
+
+## Table of Contents
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Installation](#installation)
+- [Usage](#usage)
+- [File Structure](#file-structure)
+- [Future Improvements](#future-improvements)
+- [Disclaimer](#disclaimer)
+- [License](#license)
+
 ## Features
 - **Legal Query Processing**: Uses LLM-based query rewriting to refine legal questions.
 - **Document Retrieval**: Fetches relevant documents from a local FAISS vector database.
@@ -51,6 +63,7 @@ streamlit run app.py
 ## File Structure
 - `app.py`: Main application file with Streamlit UI and query processing.
 - `database.py`: Prepares and stores legal documents in a FAISS vector database.
+- `embeddings/`: Directory containing precomputed embeddings.
 - `requirements.txt`: Dependencies for the project.
 - `.env`: Stores API keys and environment variables.
 
@@ -64,4 +77,5 @@ KanoonBuddy provides legal information for reference only and does not constitut
 
 ## License
 This project is licensed under the MIT License.
+
 
